@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "advancementstooltip",
+  "version": "${version}",
+
+  "name": "Advancements Tooltip",
+  "description": "Shows more detailed information when you mouse over an advancement",
+  "authors": [
+    "Me!"
+  ],
+
+  "license": "CC0-1.0",
+  "icon": "assets/advancementstooltip/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "me.fivespace.advancementstooltip.AdvancementsTooltip"
+    ]
+  },
+  "mixins": [
+    "advancementstooltip.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.4.0",
+    "fabric": "*"
+  },
+  "suggests": {
+    "flamingo": "*"
+  }
+}
