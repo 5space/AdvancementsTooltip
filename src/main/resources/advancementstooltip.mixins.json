@@ -5,7 +5,7 @@
   "mixins": [
   ],
   "client": [
-    "MinecraftClientMixin"
+    "AdvancementWidgetMixin"
   ],
   "injectors": {
     "defaultRequire": 1
