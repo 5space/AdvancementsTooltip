@@ -1,5 +1,6 @@
 package me.fivespace.advancementstooltip.mixin;
 
+import me.fivespace.advancementstooltip.IAdvancementWidgetMixin;
 import net.minecraft.advancement.Advancement;
 import net.minecraft.advancement.AdvancementDisplay;
 import net.minecraft.advancement.AdvancementProgress;
@@ -19,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Mixin(AdvancementWidget.class)
-public abstract class AdvancementWidgetMixin {
+public abstract class AdvancementWidgetMixin implements IAdvancementWidgetMixin {
 
     @Shadow private AdvancementProgress field_2714;
     @Shadow @Final private AdvancementDisplay display;
@@ -31,98 +32,61 @@ public abstract class AdvancementWidgetMixin {
 
     @Shadow protected abstract List<String> method_2330(String string_1, int int_1);
 
-    private int scrollStart = 0;
+    private double scroll = 0;
 
-    private void setDescription(String text) {
+    public void changeScroll(double amt) {
+        Iterable<String> criteria = this.field_2714.getUnobtainedCriteria();
+        List<String> entries = new ArrayList<>();
+        criteria.forEach(entries::add);
+        Collections.sort(entries);
+
+        int count = 0;
+        for (String entry : entries) {
+            count += this.wrapDescription("§a" + entry).size();
+        }
+
+        this.scroll += amt;
+        this.scroll = Math.max(0, Math.min(count - 9, scroll));
+    }
+
+    private List<String> wrapDescription(String text) {
         int int_1 = this.advancement.getRequirementCount();
         int int_2 = String.valueOf(int_1).length();
         int int_3 = int_1 > 1 ? this.client.textRenderer.getStringWidth("  ") + this.client.textRenderer.getStringWidth("0") * int_2 * 2 + this.client.textRenderer.getStringWidth("/") : 0;
         int int_4 = 29 + this.client.textRenderer.getStringWidth(this.field_2713) + int_3;
-        this.field_2705 = this.method_2330(text, int_4);
+        return this.method_2330(text, int_4);
     }
 
-    private void resetDescription() {
-        String desc = this.display.getDescription().asFormattedString();
-        this.setDescription(desc);
-    }
+    private List<String> getDescriptionList() {
 
-//    private void updateDescription() {
-//        if (this.field_2714 == null) {
-//            return;
-//        }
-//
-//        Iterable<String> criteria = this.field_2714.getUnobtainedCriteria();
-//        List<String> entries = new ArrayList<>();
-//        criteria.forEach(entries::add);
-//
-//        boolean showInfo = Screen.hasShiftDown();
-//
-//        if (showInfo) {
-//            if (Screen.hasAltDown()) {
-//                if (this.scrollStart > 0) {
-//                    this.scrollStart -= 1;
-//                }
-//            } else if (Screen.hasControlDown() && this.scrollStart + 10 < entries.size()) {
-//                this.scrollStart += 1;
-//            }
-//        }
-//
-//        String description;
-//        if (entries.size() == 0) {
-//            description = "§2None";
-//        } else {
-//            Collections.sort(entries);
-//            int start = Math.max(0, Math.min(entries.size(), scrollStart));
-//            int end = Math.max(0, Math.min(entries.size(), scrollStart + 10));
-//            description = "§2Criteria (" + entries.size() + "):\n§a" + String.join("\n", entries.subList(start, end));
-//        }
-//
-//        if (showInfo) {
-//            this.setDescription(description);
-//        } else {
-//            this.resetDescription();
-//        }
-//    }
+        if (Screen.hasShiftDown()) {
+            Iterable<String> criteria = this.field_2714.getUnobtainedCriteria();
+            List<String> entries = new ArrayList<>();
+            criteria.forEach(entries::add);
 
-    private void updateDescription() {
-        if (this.field_2714 == null) {
-            return;
-        }
-
-        Iterable<String> criteria = this.field_2714.getUnobtainedCriteria();
-        List<String> entries = new ArrayList<>();
-        criteria.forEach(entries::add);
-
-        boolean showInfo = Screen.hasShiftDown();
-
-        if (showInfo) {
-            if (Screen.hasAltDown()) {
-                if (this.scrollStart > 0) {
-                    this.scrollStart -= 1;
+            if (entries.size() == 0) {
+                return Collections.singletonList("§2None");
+            } else {
+                Collections.sort(entries);
+                int start = (int) scroll;
+                int end = (int) scroll + 9;
+                List<String> description = new ArrayList<>();
+                for (String entry : entries) {
+                    description.addAll(this.wrapDescription("§a" + entry));
                 }
-            } else if (Screen.hasControlDown() && this.scrollStart + 10 < entries.size()) {
-                this.scrollStart += 1;
+                description = description.subList(start, end);
+                description.add(0, "§2Criteria (" + entries.size() + "):");
+                return description;
             }
-        }
-
-        String description;
-        if (entries.size() == 0) {
-            description = "§2None";
         } else {
-            Collections.sort(entries);
-            int start = Math.max(0, Math.min(entries.size(), scrollStart));
-            int end = Math.max(0, Math.min(entries.size(), scrollStart + 10));
-            description = "§2Criteria (" + entries.size() + "):\n§a" + String.join("\n", entries.subList(start, end));
-        }
-
-        if (showInfo) {
-            this.setDescription(description);
-        } else {
-            this.resetDescription();
+            return this.wrapDescription(this.display.getDescription().asFormattedString());
         }
     }
-    @Inject(method = "method_2331", at = @At(value = "INVOKE", target = "Ljava/util/List;size()I", ordinal = 1))
+
+    @Inject(method = "method_2331", at = @At(value = "HEAD"))
     private void tooltipInjector(int int_1, int int_2, float float_1, int int_3, int int_4, CallbackInfo ci) {
-        this.updateDescription();
+        if (this.field_2714 != null) {
+            this.field_2705 = getDescriptionList();
+        }
     }
 }
