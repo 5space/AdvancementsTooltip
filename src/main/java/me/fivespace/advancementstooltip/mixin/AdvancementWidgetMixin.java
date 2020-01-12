@@ -34,6 +34,16 @@ public abstract class AdvancementWidgetMixin implements IAdvancementWidgetMixin 
 
     private double scroll = 0;
 
+    private List<String> safeSubList(List<String> arr, int start, int end) {
+        if (end < start) {
+            return new ArrayList<String>();
+        } else {
+            start = Math.max(0, Math.min(arr.size(), start));
+            end = Math.max(0, Math.min(arr.size(), end));
+            return arr.subList(start, end);
+        }
+    }
+
     public void changeScroll(double amt) {
         Iterable<String> criteria = this.field_2714.getUnobtainedCriteria();
         List<String> entries = new ArrayList<>();
@@ -74,7 +84,7 @@ public abstract class AdvancementWidgetMixin implements IAdvancementWidgetMixin 
                 for (String entry : entries) {
                     description.addAll(this.wrapDescription("§a" + entry));
                 }
-                description = description.subList(start, end);
+                description = safeSubList(description, start, end);
                 description.add(0, "§2Criteria (" + entries.size() + "):");
                 return description;
             }
